@@ -1,0 +1,23 @@
+about_us.form:
+  path: '/admin/config/about-us'
+  defaults:
+    _form: '\Drupal\about_us\Form\AboutUsForm'
+    _title: 'About Us Page Settings'
+  requirements:
+    _permission: 'administer site configuration'
+
+about_us.page:
+  path: '/about-us'
+  defaults:
+    _controller: '\Drupal\about_us\Controller\AboutUsPageController::content'
+    _title: 'About Us'
+  requirements:
+    _permission: 'access content'
+
+best_anchor_form.add:
+  path: '/best-anchor-form'
+  defaults:
+    _form: '\Drupal\about_us\Form\BestAnchorForm'
+    _title: 'Select Best Anchor of the Week'
+  requirements:
+    _permission: 'access content'
