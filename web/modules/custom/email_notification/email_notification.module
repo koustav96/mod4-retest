@@ -1,0 +1,57 @@
+<?php
+
+/**
+ * @file
+ * This file contains code for keeping news tags and title unique.
+ */
+
+use Drupal\user\Entity\User;
+
+/**
+ * Implements hook_node_insert() and hook_node_update().
+ */
+function mail_notification_node_insert($node) {
+  _mail_notification_send_email($node);
+}
+
+/**
+ * Implements hook_node_update().
+ */
+function mail_notification_node_update($node) {
+  _mail_notification_send_email($node);
+}
+
+/**
+ * Helper function to send the email notification.
+ */
+function _mail_notification_send_email($node) {
+  if ($node->getType() == 'news') {
+    $news_anchor = $node->getOwner();
+    $editor_in_chief_id = $news_anchor->get('field_editor_in_chief')->target_id;
+
+    if ($editor_in_chief_id) {
+      $editor_in_chief = User::load($editor_in_chief_id);
+      if ($editor_in_chief) { 
+        $email = $editor_in_chief->getEmail();
+        $body = t('The news article titled "@title" has been updated by @author.', [
+          '@title' => $node->getTitle(),
+          '@author' => $news_anchor->getDisplayName(),
+        ]);
+
+        \Drupal::service('plugin.manager.mail')->mail('mail_notification', 'new_article_notification', $email, \Drupal::currentUser()->getPreferredLangcode(), ['body' => $body], NULL, TRUE);
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_mail().
+ */
+function mail_notification_mail($key, &$message, $params) {
+  switch ($key) {
+    case 'new_article_notification':
+      $message['subject'] = t('New Article Notification');
+      $message['body'][] = $params['body'];
+      break;
+  }
+}

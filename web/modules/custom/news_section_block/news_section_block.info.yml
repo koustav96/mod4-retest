@@ -1,0 +1,5 @@
+name: 'News Section Block'
+type: module
+description: 'Provides a block to display the latest news.'
+core_version_requirement: ^10 || ^11
+package: Custom

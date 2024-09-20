@@ -1,0 +1,5 @@
+name: 'News Notification'
+type: module
+description: 'Sends email notifications to Editor-in-Chiefs when a news article is created.'
+core_version_requirement: ^10
+package: Custom

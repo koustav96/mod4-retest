@@ -1,0 +1,5 @@
+name: 'News Cleanup'
+type: module
+description: 'Automatically deletes news older than 6 months and notifies editors.'
+core_version_requirement: ^10
+package: Custom

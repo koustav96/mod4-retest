@@ -1,0 +1,5 @@
+name: 'About Us Page'
+type: module
+description: 'Manage the About Us page with Leadership and Best Anchor sections.'
+core_version_requirement: ^10
+package: Custom

@@ -1,0 +1,84 @@
+<?php
+
+use Drupal\node\Entity\Node;
+use Drupal\user\Entity\User;
+use Drupal\Core\Mail\MailManagerInterface;
+use Drupal\Core\CronInterface;
+use Drupal\Core\Queue\QueueFactory;
+use Drupal\Core\Queue\QueueWorkerInterface;
+
+/**
+ * Implements hook_cron().
+ */
+function news_cleanup_cron() {
+  // Calculate the timestamp for 6 months ago.
+  $six_months_ago = strtotime('-6 months');
+
+  // Load all news nodes older than 6 months.
+  $query = \Drupal::entityQuery('node')
+    ->condition('type', 'news')  
+    ->condition('created', $six_months_ago, '<')
+    ->accessCheck(FALSE);
+
+  $nids = $query->execute();
+
+  if (!empty($nids)) {
+    // Load the nodes to get their titles before deletion.
+    $nodes = Node::loadMultiple($nids);
+    $deleted_titles = [];
+
+    foreach ($nodes as $node) {
+      $deleted_titles[] = $node->getTitle();
+      $node->delete();
+    }
+
+    // After deletion, send an email to all editors.
+    _news_cleanup_send_email_to_editors($deleted_titles);
+  }
+}
+
+/**
+ * Sends an email to all editors with the list of deleted news articles.
+ *
+ * @param array $deleted_titles
+ *   An array of the titles of deleted news articles.
+ */
+function _news_cleanup_send_email_to_editors(array $deleted_titles) {
+  $mailManager = \Drupal::service('plugin.manager.mail');
+  $langcode = \Drupal::currentUser()->getPreferredLangcode();
+  $deleted_news_list = implode("\n", $deleted_titles);
+
+  // Load all users with the 'Editor' role.
+  $editor_role = 'editor';
+  $editor_users = \Drupal::entityTypeManager()->getStorage('user')->loadByProperties(['roles' => $editor_role]);
+
+  // Prepare the email message.
+  $subject = t('News Articles Deleted Automatically');
+  $message = t("The following news articles have been deleted from the site as they are older than 6 months:\n\n@list", ['@list' => $deleted_news_list]);
+
+  foreach ($editor_users as $user) {
+    $to = 'koustav0011@gmail.com';
+
+    if ($to) {
+      // Send email to each editor.
+      $params = [
+        'subject' => $subject,
+        'message' => $message,
+      ];
+
+      $mailManager->mail('news_cleanup', 'notify_editors', $to, $langcode, $params);
+    }
+  }
+}
+
+/**
+ * Implements hook_mail().
+ */
+function news_cleanup_mail($key, &$message, $params) {
+  switch ($key) {
+    case 'notify_editors':
+      $message['subject'] = $params['subject'];
+      $message['body'][] = $params['message'];
+      break;
+  }
+}
